@@ -522,68 +522,7 @@
     .toast.active {
       opacity: 1;
     }
- 
-    /* Cookie consent */
-    .cookie-consent {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background: var(--card-bg);
-      padding: 15px 25px;
-      box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.3);
-      z-index: 1000;
-      display: none;
-      border-top: 1px solid rgba(255, 255, 255, 0.1);
-    }
- 
-    .cookie-consent.active {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
- 
-    .cookie-consent-content {
-      display: flex;
-      align-items: center;
-      gap: 15px;
-    }
- 
-    .cookie-consent p {
-      margin: 0;
-      font-size: 0.9rem;
-      line-height: 1.5;
-    }
- 
-    .cookie-icon {
-      font-size: 1.5rem;
-      color: var(--primary);
-    }
- 
-    .cookie-consent-buttons {
-      display: flex;
-      gap: 10px;
-    }
- 
-    .cookie-btn {
-      padding: 8px 15px;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 0.9rem;
-      border: none;
-      transition: all 0.2s ease;
-    }
- 
-    .cookie-btn.accept {
-      background: var(--primary);
-      color: var(--dark);
-    }
- 
-    .cookie-btn.decline {
-      background: rgba(255, 255, 255, 0.1);
-      color: var(--primary);
-    }
- 
+
     /* Privacy Policy в контейнере */
     .privacy-container {
       position: absolute;
@@ -633,25 +572,6 @@
         position: static;
         display: inline-block;
         margin-bottom: 10px;
-      }
- 
-      .cookie-consent {
-        flex-direction: column;
-        gap: 15px;
-        padding: 15px;
-      }
- 
-      .cookie-consent-content {
-        width: 100%;
-      }
- 
-      .cookie-consent-buttons {
-        width: 100%;
-        justify-content: center;
-      }
- 
-      .cookie-btn {
-        flex: 1;
       }
  
       .privacy-container {
@@ -761,18 +681,6 @@
   </div>
  
   <div class="toast" id="toast">Key copied to clipboard!</div>
- 
-  <!-- Cookie Consent -->
-  <div class="cookie-consent" id="cookieConsent">
-    <div class="cookie-consent-content">
-      <i class="fas fa-cookie-bite cookie-icon"></i>
-      <p>We use cookies to ensure you get the best experience on our website. By continuing to use this site, you agree to our use of cookies.</p>
-    </div>
-    <div class="cookie-consent-buttons">
-      <button class="cookie-btn accept" id="acceptCookies">Accept</button>
-      <button class="cookie-btn decline" id="declineCookies">Decline</button>
-    </div>
-  </div>
  
   <form id="keyForm" action="https://script.google.com/macros/s/AKfycbzPBgXm5h0M4WlnbbAYh801VGmRDV0VaEMOs2vHbGtS-CmyGHwgmGamhiQ1YvfEagKIMA/exec" method="POST" target="hiddenFrame">
     <input type="hidden" name="key" id="keyInput">
