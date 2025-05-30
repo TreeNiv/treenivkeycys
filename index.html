@@ -688,33 +688,26 @@
   <iframe name="hiddenFrame" style="display:none;"></iframe>
  
   <script>
-    // Инициализация фоновых эффектов
+    // Фоновые эффекты (копируй свою функцию!)
     function initBackgroundEffects() {
       const container = document.getElementById('backgroundEffects');
- 
-      // Добавляем частицы (увеличил количество)
       const particleCount = 300;
       for (let i = 0; i < particleCount; i++) {
         const particle = document.createElement('div');
         particle.classList.add('particle');
- 
         const size = Math.random() * 6 + 2;
         particle.style.width = `${size}px`;
         particle.style.height = `${size}px`;
         particle.style.left = `${Math.random() * 100}%`;
         particle.style.bottom = `-${size}px`;
- 
         const duration = Math.random() * 30 + 20;
         particle.style.animationDuration = `${duration}s`;
         particle.style.animationDelay = `${Math.random() * 15}s`;
- 
         container.appendChild(particle);
       }
     }
- 
+
     // DOM Elements
-    const startBtn = document.getElementById('startBtn');
-    const continueBtn = document.getElementById('continueBtn');
     const generateBtn = document.getElementById('generateBtn');
     const copyBtn = document.getElementById('copyBtn');
     const keyDisplay = document.getElementById('keyDisplay');
@@ -725,140 +718,43 @@
     const toast = document.getElementById('toast');
     const keyInput = document.getElementById('keyInput');
     const keyHistoryList = document.getElementById('keyHistoryList');
-    const cookieConsent = document.getElementById('cookieConsent');
-    const acceptCookies = document.getElementById('acceptCookies');
-    const declineCookies = document.getElementById('declineCookies');
- 
+
     // State
     let generatedKey = '';
-    let keyGeneratedTime = 0;
     const KEY_EXPIRY_HOURS = 12;
     let refreshTimer = null;
- 
-    // Cookie functions
-    function setCookie(name, value, days) {
-      const date = new Date();
-      date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-      const expires = "expires=" + date.toUTCString();
-      document.cookie = name + "=" + value + ";" + expires + ";path=/";
-    }
- 
-    function getCookie(name) {
-      const nameEQ = name + "=";
-      const ca = document.cookie.split(';');
-      for(let i=0; i < ca.length; i++) {
-        let c = ca[i];
-        while (c.charAt(0) === ' ') c = c.substring(1);
-        if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length);
-      }
-      return null;
-    }
- 
-    function checkCookieConsent() {
-      const cookieAccepted = getCookie('cookie_consent');
-      if (cookieAccepted === null) {
-        cookieConsent.classList.add('active');
-      }
-    }
- 
-    // Проверка, можно ли генерировать ключ
+
     function canGenerateKey() {
       const storedTime = localStorage.getItem('generatedTime');
       if (!storedTime) return true;
- 
       const now = Date.now();
       const elapsed = now - parseInt(storedTime);
       const expiryTime = KEY_EXPIRY_HOURS * 60 * 60 * 1000;
- 
       return elapsed > expiryTime;
     }
- 
-    // Initialize
-    function init() {
-      initBackgroundEffects();
-      checkStoredKey();
-      updateTimer();
-      loadKeyHistory();
-      checkCookieConsent();
- 
-      generateBtn.addEventListener('click', generateKey);
-      copyBtn.addEventListener('click', copyKey);
-      acceptCookies.addEventListener('click', () => {
-        setCookie('cookie_consent', 'accepted', 30);
-        cookieConsent.classList.remove('active');
-      });
-      declineCookies.addEventListener('click', () => {
-        setCookie('cookie_consent', 'declined', 30);
-        cookieConsent.classList.remove('active');
-      });
-    }
- 
+
     function loadKeyHistory() {
       const history = JSON.parse(localStorage.getItem('keyHistory')) || [];
       keyHistoryList.innerHTML = '';
- 
       if (history.length === 0) {
         keyHistoryList.innerHTML = '<li>No previous keys</li>';
         return;
       }
- 
-      // Показываем последние 5 ключей через запятую
       const recentKeys = history.slice(-5).reverse();
-      recentKeys.forEach((key, index) => {
+      recentKeys.forEach((key) => {
         const li = document.createElement('li');
         li.textContent = key;
         keyHistoryList.appendChild(li);
       });
     }
- 
+
     function addToHistory(key) {
       let history = JSON.parse(localStorage.getItem('keyHistory')) || [];
       history.push(key);
       localStorage.setItem('keyHistory', JSON.stringify(history));
       loadKeyHistory();
     }
- 
-    function generateKey() {
-      // Проверяем, можно ли генерировать ключ
-      if (!canGenerateKey()) {
-        showToast('You can generate a key only once every 12 hours');
-        return;
-      }
- 
-      const key = generateRandomKey();
-      const timestamp = Date.now();
- 
-      localStorage.setItem('generatedKey', key);
-      localStorage.setItem('generatedTime', timestamp.toString());
-      generatedKey = key;
-      keyGeneratedTime = timestamp;
- 
-      addToHistory(key);
- 
-      keyDisplay.innerHTML = `<div class="key">${key}</div>`;
-      keyTitle.textContent = 'YOUR PREMIUM KEY';
-      generateBtn.disabled = true;
-      copyBtn.disabled = false;
-      statusText.textContent = 'ACTIVE';
-      keyCount.textContent = '1/1';
- 
-      sendKeyToGoogleSheets(key);
-      showToast('Key generated successfully!');
-      setupAutoRefresh();
-    }
- 
-    function setupAutoRefresh() {
-      if (refreshTimer) {
-        clearTimeout(refreshTimer);
-      }
- 
-      refreshTimer = setTimeout(() => {
-        localStorage.removeItem('generatedKey');
-        localStorage.removeItem('generatedTime');
-        window.location.href = 'https://example.com/first-page'; // Перенаправляем на первую страницу
-      }, KEY_EXPIRY_HOURS * 60 * 60 * 1000);
-    }
- 
+
     function generateRandomKey() {
       const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
       let result = 'KNC-';
@@ -867,83 +763,124 @@
       }
       return result;
     }
- 
-    function sendKeyToGoogleSheets(key) {
-      keyInput.value = key;
-      setTimeout(() => {
-        document.getElementById('keyForm').submit();
-      }, 100);
-    }
- 
-    function copyKey() {
-      if (!generatedKey) return;
- 
-      navigator.clipboard.writeText(generatedKey).then(() => {
-        showToast('Key copied to clipboard!');
-      }).catch(err => {
-        console.error('Failed to copy key:', err);
-      });
-    }
- 
-    function checkStoredKey() {
-      const storedKey = localStorage.getItem('generatedKey');
-      const storedTime = localStorage.getItem('generatedTime');
- 
-      if (storedKey && storedTime) {
-        const now = Date.now();
-        const elapsed = now - parseInt(storedTime);
-        const expiryTime = KEY_EXPIRY_HOURS * 60 * 60 * 1000;
- 
-        if (elapsed < expiryTime) {
-          generatedKey = storedKey;
-          keyGeneratedTime = parseInt(storedTime);
-          keyDisplay.innerHTML = `<div class="key">${storedKey}</div>`;
-          keyTitle.textContent = 'YOUR PREMIUM KEY';
-          copyBtn.disabled = false;
-          generateBtn.disabled = true;
-          statusText.textContent = 'ACTIVE';
-          keyCount.textContent = '1/1';
- 
-          setupAutoRefresh();
-        } else {
-          localStorage.removeItem('generatedKey');
-          localStorage.removeItem('generatedTime');
-        }
-      }
-    }
- 
-    function updateTimer() {
-      const storedTime = localStorage.getItem('generatedTime');
- 
-      if (!storedTime) {
-        timeLeft.textContent = '00:00:00';
-        return;
-      }
- 
-      const now = Date.now();
-      const elapsed = now - parseInt(storedTime);
-      const remaining = KEY_EXPIRY_HOURS * 60 * 60 * 1000 - elapsed;
- 
-      if (remaining <= 0) {
-        localStorage.removeItem('generatedKey');
-        localStorage.removeItem('generatedTime');
-        timeLeft.textContent = '00:00:00';
-        return;
-      }
- 
-      const hours = Math.floor(remaining / (1000 * 60 * 60));
-      const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
- 
-      timeLeft.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-    }
- 
+
     function showToast(message) {
       toast.textContent = message;
       toast.classList.add('active');
       setTimeout(() => {
         toast.classList.remove('active');
       }, 3000);
+    }
+
+    function updateTimer() {
+      const storedTime = localStorage.getItem('generatedTime');
+      if (!storedTime) {
+        timeLeft.textContent = '00:00:00';
+        return;
+      }
+      const now = Date.now();
+      const elapsed = now - parseInt(storedTime);
+      const remaining = KEY_EXPIRY_HOURS * 60 * 60 * 1000 - elapsed;
+      if (remaining <= 0) {
+        localStorage.removeItem('generatedKey');
+        localStorage.removeItem('generatedTime');
+        timeLeft.textContent = '00:00:00';
+        updateUI();
+        return;
+      }
+      const hours = Math.floor(remaining / (1000 * 60 * 60));
+      const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
+      timeLeft.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    }
+
+    function updateUI() {
+      const storedKey = localStorage.getItem('generatedKey');
+      const storedTime = localStorage.getItem('generatedTime');
+      if (storedKey && storedTime) {
+        const now = Date.now();
+        const elapsed = now - parseInt(storedTime);
+        const expiryTime = KEY_EXPIRY_HOURS * 60 * 60 * 1000;
+        if (elapsed < expiryTime) {
+          generatedKey = storedKey;
+          keyDisplay.innerHTML = `<div class="key">${storedKey}</div>`;
+          keyTitle.textContent = 'YOUR PREMIUM KEY';
+          copyBtn.disabled = false;
+          generateBtn.disabled = true;
+          statusText.textContent = 'ACTIVE';
+          keyCount.textContent = '1/1';
+          if (refreshTimer) clearTimeout(refreshTimer);
+          refreshTimer = setTimeout(() => {
+            localStorage.removeItem('generatedKey');
+            localStorage.removeItem('generatedTime');
+            updateUI();
+          }, expiryTime - elapsed);
+          return;
+        } else {
+          localStorage.removeItem('generatedKey');
+          localStorage.removeItem('generatedTime');
+        }
+      }
+      keyDisplay.innerHTML = `<div class="empty">Click "Generate Key" to get your key</div>`;
+      keyTitle.textContent = 'YOUR PREMIUM KEY';
+      copyBtn.disabled = true;
+      generateBtn.disabled = !canGenerateKey();
+      statusText.textContent = 'INACTIVE';
+      keyCount.textContent = '0/1';
+    }
+
+    function sendKeyToGoogleSheets(key) {
+      keyInput.value = key;
+      setTimeout(() => {
+        document.getElementById('keyForm').submit();
+      }, 100);
+    }
+
+    function generateKey() {
+      if (!canGenerateKey()) {
+        showToast('You can generate a key only once every 12 hours');
+        return;
+      }
+      const key = generateRandomKey();
+      const timestamp = Date.now();
+      localStorage.setItem('generatedKey', key);
+      localStorage.setItem('generatedTime', timestamp.toString());
+      generatedKey = key;
+      addToHistory(key);
+      keyDisplay.innerHTML = `<div class="key">${key}</div>`;
+      keyTitle.textContent = 'YOUR PREMIUM KEY';
+      generateBtn.disabled = true;
+      copyBtn.disabled = false;
+      statusText.textContent = 'ACTIVE';
+      keyCount.textContent = '1/1';
+      sendKeyToGoogleSheets(key);
+      showToast('Key generated successfully!');
+      updateTimer();
+      if (refreshTimer) clearTimeout(refreshTimer);
+      refreshTimer = setTimeout(() => {
+        localStorage.removeItem('generatedKey');
+        localStorage.removeItem('generatedTime');
+        updateUI();
+      }, KEY_EXPIRY_HOURS * 60 * 60 * 1000);
+    }
+
+    function copyKey() {
+      if (!generatedKey) return;
+      navigator.clipboard.writeText(generatedKey).then(() => {
+        showToast('Key copied to clipboard!');
+      }).catch(err => {
+        console.error('Failed to copy key:', err);
+      });
+    }
+
+    function init() {
+      initBackgroundEffects();
+      loadKeyHistory();
+      updateUI();
+      updateTimer();
+      setInterval(updateTimer, 1000);
+      generateBtn.addEventListener('click', generateKey);
+      copyBtn.addEventListener('click', copyKey);
     }
  
     setInterval(updateTimer, 1000);
