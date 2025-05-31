@@ -688,6 +688,18 @@
   <iframe name="hiddenFrame" style="display:none;"></iframe>
  
   <script>
+
+(function(){
+  // Проверяем оба чекпоинта
+  if (
+    localStorage.getItem('checkpoint1') !== 'ok' ||
+    localStorage.getItem('checkpoint2') !== 'ok'
+  ) {
+    // Если хотя бы один не пройден, редиректим на первый сайт
+    window.location.href = 'https://treeniv.github.io/treenivkesys/';
+  }
+})();
+
     // Фоновые эффекты (копируй свою функцию!)
     function initBackgroundEffects() {
       const container = document.getElementById('backgroundEffects');
@@ -845,6 +857,8 @@
       const timestamp = Date.now();
       localStorage.setItem('generatedKey', key);
       localStorage.setItem('generatedTime', timestamp.toString());
+      localStorage.removeItem('checkpoint1');
+      localStorage.removeItem('checkpoint2');
       generatedKey = key;
       addToHistory(key);
       keyDisplay.innerHTML = `<div class="key">${key}</div>`;
