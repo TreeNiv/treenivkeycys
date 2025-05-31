@@ -727,164 +727,99 @@ const continueBtn = document.getElementById('continueBtn');
 const generateBtn = document.getElementById('generateBtn');
 const copyBtn = document.getElementById('copyBtn');
 const keyDisplay = document.getElementById('keyDisplay');
-const keyTitle = document.getElementById('keyTitle');
-const progressBar = document.getElementById('progressBar');
-const step1 = document.getElementById('step1');
-const step2 = document.getElementById('step2');
-const step3 = document.getElementById('step3');
-const progressText1 = document.getElementById('progressText1');
-const progressText2 = document.getElementById('progressText2');
-const progressText3 = document.getElementById('progressText3');
-const keyCount = document.getElementById('keyCount');
-const timeLeft = document.getElementById('timeLeft');
 const statusText = document.getElementById('statusText');
-const checkpointModal = document.getElementById('checkpointModal');
-const modalTitle = document.getElementById('modalTitle');
-const modalText = document.getElementById('modalText');
-const visitLinkBtn = document.getElementById('visitLinkBtn');
-const cancelModalBtn = document.getElementById('cancelModalBtn');
 const toast = document.getElementById('toast');
-const keyInput = document.getElementById('keyInput');
-const keyHistoryList = document.getElementById('keyHistoryList');
 
-// State
-let currentStep = 0;
-let generatedKey = '';
-let keyGeneratedTime = 0;
+// Настройки
 const KEY_EXPIRY_HOURS = 12;
 const checkpointLinks = [
   'https://link-center.net/1342865/uPa2M6jMr9Do',
   'https://example.com/checkpoint2'
 ];
 const adLink = 'https://www.profitableratecpm.com/srddr2t9?key=bf6f75b240992269ae27f4ae790191e4';
-let currentCheckpoint = 0;
-let refreshTimer = null;
 
+// Состояние
+let currentStep = 1; // Начинаем сразу с шага 1 (продолжить)
+let generatedKey = '';
+let keyGeneratedTime = 0;
+let currentCheckpoint = 0;
+let adShownCount = 0;
+
+// Инициализация
+function init() {
+  checkStoredKey();
+  updateProgress();
+  updateTimer();
+  
+  // Настройка кнопок
+  if (startBtn) startBtn.addEventListener('click', startProcess);
+  if (continueBtn) continueBtn.addEventListener('click', continueProcess);
+  if (generateBtn) generateBtn.addEventListener('click', generateKey);
+  if (copyBtn) copyBtn.addEventListener('click', copyKey);
+}
+
+// Основные функции
 function startProcess() {
   if (!canGenerateKey()) {
     showToast('You can generate a key only once every 12 hours');
     return;
   }
   
-  localStorage.removeItem('adShownCount');
   currentCheckpoint = 0;
-  openCheckpointModal();
+  showAdBeforeCheckpoint();
 }
 
 function continueProcess() {
-  localStorage.removeItem('adShownCount');
   currentCheckpoint = 1;
-  openCheckpointModal();
+  showAdBeforeCheckpoint();
 }
 
-function openCheckpointModal() {
-  if (!checkpointModal || !modalTitle || !modalText || !visitLinkBtn) {
-    console.error('Checkpoint modal elements not found');
+function showAdBeforeCheckpoint() {
+  adShownCount = 0;
+  showAdWindow();
+}
+
+function showAdWindow() {
+  adShownCount++;
+  localStorage.setItem('adShownCount', adShownCount);
+  
+  const adWindow = window.open(adLink, '_blank', 'width=800,height=600');
+  
+  if (!adWindow) {
+    showToast('Please allow popups to continue');
     return;
   }
-
-  if (currentCheckpoint === 0) {
-    modalTitle.textContent = 'Checkpoint 1';
-    modalText.textContent = 'Please visit the following link and return to this page to continue.';
-    
-    visitLinkBtn.onclick = function() {
-      handleAdBeforeCheckpoint(checkpointLinks[0], '1');
-    };
-    
-    checkpointModal.classList.add('active');
-  } else if (currentCheckpoint === 1) {
-    modalTitle.textContent = 'Checkpoint 2';
-    modalText.textContent = 'Please visit the following link and return to this page to continue.';
-    
-    visitLinkBtn.onclick = function() {
-      handleAdBeforeCheckpoint(checkpointLinks[1], '2');
-    };
-    
-    checkpointModal.classList.add('active');
-  }
-}
-
-function canGenerateKey() {
-  const storedTime = localStorage.getItem('generatedTime');
-  if (!storedTime) return true;
-
-  const now = Date.now();
-  const elapsed = now - parseInt(storedTime);
-  const expiryTime = KEY_EXPIRY_HOURS * 60 * 60 * 1000;
-
-  return elapsed > expiryTime;
-}
-
-function handleAdBeforeCheckpoint(checkpointUrl, checkpointNumber) {
-  let adShownCount = parseInt(localStorage.getItem('adShownCount')) || 0;
-  adShownCount++;
-  localStorage.setItem('adShownCount', adShownCount.toString());
   
-  const adWindow = window.open(adLink, '_blank');
-  
-  if (adShownCount < 2) {
-    showToast(`Please visit the ad link (${adShownCount}/2)`);
-    if (adWindow) {
-      adWindow.focus();
+  const checkAdClosed = setInterval(() => {
+    if (adWindow.closed) {
+      clearInterval(checkAdClosed);
+      handleAdClosed();
     }
+  }, 500);
+}
+
+function handleAdClosed() {
+  if (adShownCount < 2) {
+    showToast(`Please visit the ad (${adShownCount}/2)`);
+    setTimeout(() => showAdWindow(), 1500);
   } else {
-    setTimeout(() => {
-      window.location.href = checkpointUrl + '?source=' + encodeURIComponent(window.location.href) + '&checkpoint=' + checkpointNumber;
-      localStorage.removeItem('adShownCount');
-      if (checkpointModal) checkpointModal.classList.remove('active');
-    }, 1000);
+    completeCheckpoint();
   }
 }
 
-function closeModal() {
-  if (checkpointModal) checkpointModal.classList.remove('active');
-}
-
-function updateProgress() {
-  if (!step1 || !step2 || !step3 || !progressBar || !progressText1 || !progressText2 || !progressText3) return;
-
-  step1.classList.remove('active', 'completed');
-  step2.classList.remove('active', 'completed');
-  step3.classList.remove('active', 'completed');
-  progressText1.classList.remove('active');
-  progressText2.classList.remove('active');
-  progressText3.classList.remove('active');
-
-  if (currentStep === 0) {
-    progressBar.style.width = '0%';
-    if (startBtn) startBtn.disabled = !canGenerateKey();
-    if (continueBtn) continueBtn.disabled = true;
-    if (generateBtn) generateBtn.disabled = true;
-    if (statusText) statusText.textContent = 'INACTIVE';
-  } else if (currentStep === 1) {
-    progressBar.style.width = '50%';
-    step1.classList.add('completed');
-    step2.classList.add('active');
-    progressText1.classList.add('active');
-    progressText2.classList.add('active');
-    if (startBtn) startBtn.disabled = true;
-    if (continueBtn) continueBtn.disabled = false;
-    if (generateBtn) generateBtn.disabled = true;
-    if (statusText) statusText.textContent = 'CHECKPOINT 1 COMPLETED';
-  } else if (currentStep === 2) {
-    progressBar.style.width = '100%';
-    step1.classList.add('completed');
-    step2.classList.add('completed');
-    step3.classList.add('active');
-    progressText1.classList.add('active');
-    progressText2.classList.add('active');
-    progressText3.classList.add('active');
-    if (startBtn) startBtn.disabled = true;
-    if (continueBtn) continueBtn.disabled = true;
-    if (generateBtn) generateBtn.disabled = false;
-    if (statusText) statusText.textContent = 'CHECKPOINT 2 COMPLETED';
-  }
-
-  const hasKey = localStorage.getItem('generatedKey') ? 1 : 0;
-  if (keyCount) keyCount.textContent = `${hasKey}/1`;
+function completeCheckpoint() {
+  const checkpointUrl = checkpointLinks[currentCheckpoint];
+  const returnUrl = window.location.href.split('?')[0];
+  
+  window.location.href = `${checkpointUrl}?return=${encodeURIComponent(returnUrl)}`;
 }
 
 function generateKey() {
+  if (!canGenerateKey()) {
+    showToast('You can generate a key only once every 12 hours');
+    return;
+  }
+  
   generatedKey = generateRandomKey();
   keyGeneratedTime = Date.now();
   
@@ -892,146 +827,50 @@ function generateKey() {
   localStorage.setItem('generatedTime', keyGeneratedTime.toString());
   
   if (keyDisplay) keyDisplay.innerHTML = `<div class="key">${generatedKey}</div>`;
-  if (keyTitle) keyTitle.textContent = 'YOUR PREMIUM KEY';
   if (copyBtn) copyBtn.disabled = false;
   
-  addToHistory(generatedKey);
-  sendKeyToGoogleSheets(generatedKey);
-  
-  currentStep = 3;
-  updateProgress();
-  if (statusText) statusText.textContent = 'ACTIVE';
-  if (keyCount) keyCount.textContent = '1/1';
-  
-  setupAutoRefresh();
   showToast('Key generated successfully!');
+  updateProgress();
+  setupAutoRefresh();
+}
+
+// Вспомогательные функции
+function canGenerateKey() {
+  const storedTime = localStorage.getItem('generatedTime');
+  if (!storedTime) return true;
+
+  const elapsed = Date.now() - parseInt(storedTime);
+  return elapsed > (KEY_EXPIRY_HOURS * 60 * 60 * 1000);
 }
 
 function generateRandomKey() {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let result = 'KNC-';
-  for (let i = 0; i < 12; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  return 'KNC-' + Array.from({length: 12}, () => 
+    chars[Math.floor(Math.random() * chars.length)]).join('');
+}
+
+function updateProgress() {
+  // Логика обновления прогресса
+  if (currentStep === 1) {
+    if (startBtn) startBtn.disabled = true;
+    if (continueBtn) continueBtn.disabled = false;
+    if (statusText) statusText.textContent = 'CHECKPOINT 1 COMPLETED';
+  } else if (currentStep === 2) {
+    if (continueBtn) continueBtn.disabled = true;
+    if (generateBtn) generateBtn.disabled = false;
+    if (statusText) statusText.textContent = 'CHECKPOINT 2 COMPLETED';
   }
-  return result;
-}
-
-function loadKeyHistory() {
-  if (!keyHistoryList) return;
-  
-  const history = JSON.parse(localStorage.getItem('keyHistory')) || [];
-  keyHistoryList.innerHTML = '';
-
-  if (history.length === 0) {
-    keyHistoryList.innerHTML = '<li>No previous keys</li>';
-    return;
-  }
-
-  const recentKeys = history.slice(-5).reverse();
-  recentKeys.forEach((key, index) => {
-    const li = document.createElement('li');
-    li.textContent = key;
-    keyHistoryList.appendChild(li);
-  });
-}
-
-function addToHistory(key) {
-  const history = JSON.parse(localStorage.getItem('keyHistory')) || [];
-  history.push(key);
-  localStorage.setItem('keyHistory', JSON.stringify(history));
-  loadKeyHistory();
-}
-
-function sendKeyToGoogleSheets(key) {
-  if (!keyInput) return;
-  
-  keyInput.value = key;
-  setTimeout(() => {
-    const form = document.getElementById('keyForm');
-    if (form) form.submit();
-  }, 100);
-}
-
-function copyKey() {
-  if (!generatedKey || !navigator.clipboard) return;
-
-  navigator.clipboard.writeText(generatedKey).then(() => {
-    showToast('Key copied to clipboard!');
-  }).catch(err => {
-    console.error('Failed to copy key:', err);
-  });
-}
-
-function checkStoredKey() {
-  const storedKey = localStorage.getItem('generatedKey');
-  const storedTime = localStorage.getItem('generatedTime');
-
-  if (storedKey && storedTime) {
-    const now = Date.now();
-    const elapsed = now - parseInt(storedTime);
-    const expiryTime = KEY_EXPIRY_HOURS * 60 * 60 * 1000;
-
-    if (elapsed < expiryTime) {
-      generatedKey = storedKey;
-      keyGeneratedTime = parseInt(storedTime);
-      if (keyDisplay) keyDisplay.innerHTML = `<div class="key">${storedKey}</div>`;
-      if (keyTitle) keyTitle.textContent = 'YOUR PREMIUM KEY';
-      if (copyBtn) copyBtn.disabled = false;
-      if (statusText) statusText.textContent = 'ACTIVE';
-      if (keyCount) keyCount.textContent = '1/1';
-
-      if (step1) step1.classList.add('completed');
-      if (step2) step2.classList.add('completed');
-      if (step3) step3.classList.add('completed');
-      if (progressBar) progressBar.style.width = '100%';
-      if (progressText1) progressText1.classList.add('active');
-      if (progressText2) progressText2.classList.add('active');
-      if (progressText3) progressText3.classList.add('active');
-      if (generateBtn) generateBtn.disabled = true;
-      if (continueBtn) continueBtn.disabled = true;
-      if (startBtn) startBtn.disabled = true;
-
-      setupAutoRefresh();
-    } else {
-      localStorage.removeItem('generatedKey');
-      localStorage.removeItem('generatedTime');
-      currentStep = 0;
-      updateProgress();
-    }
-  }
-}
-
-function updateTimer() {
-  if (!timeLeft) return;
-  
-  const storedTime = localStorage.getItem('generatedTime');
-
-  if (!storedTime) {
-    timeLeft.textContent = '00:00:00';
-    return;
-  }
-
-  const now = Date.now();
-  const elapsed = now - parseInt(storedTime);
-  const remaining = KEY_EXPIRY_HOURS * 60 * 60 * 1000 - elapsed;
-
-  if (remaining <= 0) {
-    localStorage.removeItem('generatedKey');
-    localStorage.removeItem('generatedTime');
-    timeLeft.textContent = '00:00:00';
-    return;
-  }
-  
-  const hours = Math.floor(remaining / (1000 * 60 * 60));
-  const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
-  const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
-  
-  timeLeft.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
 
 function showToast(message) {
   if (!toast) return;
-  
+  toast.textContent = message;
+  toast.classList.add('active');
+  setTimeout(() => toast.classList.remove('active'), 3000);
+}
+
+// Запуск
+window.addEventListener('load', init);
   toast.textContent = message;
   toast.classList.add('active');
   setTimeout(() => {
