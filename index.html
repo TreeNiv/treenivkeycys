@@ -691,11 +691,14 @@
  
 <script>
 (function(){
-  // Проверяем оба чекпоинта
-  if (
-    localStorage.getItem('checkpoint1') !== 'ok' ||
-    localStorage.getItem('checkpoint2') !== 'ok'
-  ) {
+  const urlParams = new URLSearchParams(window.location.search);
+  // Если параметр есть — сохраняем чекпоинт2
+  if (urlParams.get('checkpoint2') === 'ok') {
+    localStorage.setItem('checkpoint2', 'ok');
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }
+  // Проверяем чекпоинт2
+  if (localStorage.getItem('checkpoint2') !== 'ok') {
     window.location.href = 'https://treenivkesys.netlify.app/';
   }
 })();
