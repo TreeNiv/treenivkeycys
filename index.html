@@ -696,7 +696,6 @@
     localStorage.getItem('checkpoint1') !== 'ok' ||
     localStorage.getItem('checkpoint2') !== 'ok'
   ) {
-    // Если хотя бы один не пройден, редиректим на первый сайт
     window.location.href = 'https://treenivkesys.netlify.app/';
   }
 })();
@@ -745,7 +744,16 @@ function canGenerateKey() {
   const now = Date.now();
   const elapsed = now - parseInt(storedTime);
   const expiryTime = KEY_EXPIRY_HOURS * 60 * 60 * 1000;
-  return elapsed > expiryTime;
+  if (elapsed > expiryTime) {
+    // Ключ устарел — чистим всё и редиректим на первый сайт!
+    localStorage.removeItem('generatedKey');
+    localStorage.removeItem('generatedTime');
+    localStorage.removeItem('checkpoint1');
+    localStorage.removeItem('checkpoint2');
+    window.location.href = 'https://treenivkesys.netlify.app/';
+    return false;
+  }
+  return true;
 }
 
 function loadKeyHistory() {
@@ -828,12 +836,19 @@ function updateUI() {
       refreshTimer = setTimeout(() => {
         localStorage.removeItem('generatedKey');
         localStorage.removeItem('generatedTime');
-        updateUI();
+        localStorage.removeItem('checkpoint1');
+        localStorage.removeItem('checkpoint2');
+        window.location.href = 'https://treenivkesys.netlify.app/';
       }, expiryTime - elapsed);
       return;
     } else {
+      // Ключ устарел — чистим и редиректим!
       localStorage.removeItem('generatedKey');
       localStorage.removeItem('generatedTime');
+      localStorage.removeItem('checkpoint1');
+      localStorage.removeItem('checkpoint2');
+      window.location.href = 'https://treenivkesys.netlify.app/';
+      return;
     }
   }
   keyDisplay.innerHTML = `<div class="empty">Click "Generate Key" to get your key</div>`;
@@ -853,27 +868,25 @@ function sendKeyToGoogleSheets(key) {
 
 function generateKey() {
   if (!canGenerateKey()) {
-    showToast('You can generate a key only once every 12 hours');
+    // Уже редиректит из canGenerateKey
     return;
   }
 
   // Показываем рекламу только один раз за сессию
   if (!adShownThisSession) {
     const adWindow = window.open(adLink, '_blank');
-    if (adWindow) {
-      adWindow.focus();
-    }
+    if (adWindow) adWindow.focus();
     adShownThisSession = true;
     showToast('Please wait while we generate your key...');
-    setTimeout(generateKey, 3000); // Повторяем через 3 секунды
+    setTimeout(generateKey, 3000);
     return;
   }
-
   // Генерация ключа
   const key = generateRandomKey();
   const timestamp = Date.now();
   localStorage.setItem('generatedKey', key);
   localStorage.setItem('generatedTime', timestamp.toString());
+  // Чистим чекпоинты!
   localStorage.removeItem('checkpoint1');
   localStorage.removeItem('checkpoint2');
   generatedKey = key;
@@ -891,7 +904,10 @@ function generateKey() {
   refreshTimer = setTimeout(() => {
     localStorage.removeItem('generatedKey');
     localStorage.removeItem('generatedTime');
-    updateUI();
+    // Чистим чекпоинты и редиректим!
+    localStorage.removeItem('checkpoint1');
+    localStorage.removeItem('checkpoint2');
+    window.location.href = 'https://treenivkesys.netlify.app/';
   }, KEY_EXPIRY_HOURS * 60 * 60 * 1000);
 }
 
